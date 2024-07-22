@@ -7,10 +7,10 @@ interface BackButtonProps {
   label: string;
 }
 
-export default function BackButton({ label, href }: BackButtonProps) {
+export const BackButton = ({ label, href }: BackButtonProps) => {
   return (
     <Button variant={"link"} asChild size="sm" className="font-normal w-full">
       <Link href={href}>{label}</Link>
     </Button>
   );
-}
+};
