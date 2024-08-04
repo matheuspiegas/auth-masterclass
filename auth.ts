@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import authConfig from "@/auth.config";
 import { getUserById } from "@/data/user";
 import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation";
+import { getAccountByUserId } from "./data/account";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   //@ts-ignore
@@ -51,12 +52,23 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.isTwoFactorEnabled = token.isTwoFactorEnabled;
       }
+      if (session.user) {
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.isOAuth = token.isOAuth;
+      }
       return session;
     },
     async jwt({ token }) {
       if (!token.sub) return token;
       const existingUser = await getUserById(token.sub);
       if (!existingUser) return token;
+
+      const existingAccount = await getAccountByUserId(existingUser.id);
+
+      token.isOAuth = !!existingAccount;
+      token.name = existingUser.name;
+      token.email = existingUser.email;
       token.role = existingUser.role;
       token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
       return token;
@@ -65,3 +77,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   ...authConfig,
 });
+
+//para atualizar a sessao ao atualizar dados no lado do cliente temos que usar o callback do jwt e atualizar os dados diretamente dentro do callback
+// um exemplo seria se o usuario quiser mudar o nome, o comportamento esperado seria que ao clicar em salvar o nome seja atualizado conforme foi salvo, para fazer isso no nextauth devemos usar o callback jwt para atribuir o valor de name diretamente no token.name usando o banco de dados.
